@@ -271,6 +271,8 @@ $('docx').onchange=async e=>{
     );
 
     storyHtml=r.value;
+    console.log('HTML Word:', r.value);
+console.log('Số ảnh đọc được:', (r.value.match(/<img\b/gi)||[]).length);
 
     let doc=new DOMParser().parseFromString(
       storyHtml,'text/html'
