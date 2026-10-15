@@ -182,9 +182,12 @@ function addSafe(parent,node){
   if(node.tagName==='IMG'){
     let src=node.getAttribute('src')||'';
 
-    if(!src.startsWith(SUPABASE_URL+'/storage/v1/object/public/story-images/')){
-      return;
-    }
+  
+if(!src.startsWith(SUPABASE_URL.replace(/\/$/, '')+'/storage/v1/object/public/story-images/')){
+  console.error('Đường dẫn ảnh không hợp lệ:', src);
+  return;
+}
+
 
     el.src=src;
     el.alt=node.getAttribute('alt')||'';
