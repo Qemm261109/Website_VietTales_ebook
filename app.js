@@ -188,8 +188,9 @@ if(!src.startsWith(SUPABASE_URL.replace(/\/$/, '')+'/storage/v1/object/public/st
   return;
 }
 
-
-    el.src=src;
+el.onload=()=>console.log('Ảnh hiển thị thành công:',src);
+el.onerror=()=>console.error('Ảnh không tải được:',src);
+el.src=src;
     el.alt=node.getAttribute('alt')||'';
     el.loading='lazy';
   }
