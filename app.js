@@ -183,7 +183,7 @@ function addSafe(parent,node){
     let src=node.getAttribute('src')||'';
 
   
-if(!src.startsWith(SUPABASE_URL.replace(/\/$/, '')+'/storage/v1/object/public/story-images/')){
+if (!src.startsWith('https://')) {
   console.error('Đường dẫn ảnh không hợp lệ:', src);
   return;
 }
