@@ -1,6 +1,6 @@
 (() => {
 const $=id=>document.getElementById(id);
-let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null;
+let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,favorites=[];
 let storyHtml='',storyTextSnapshot='';
 const routes={'Truyền Thuyết':'truyen-thuyet','Truyện Cười':'truyen-cuoi','Truyện Cổ Tích':'truyen-co-tich','Truyện Giải Thích Địa Phương':'truyen-dia-phuong'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,17 +8,37 @@ function toast(s,error=false){let t=$('toast');t.textContent=s;t.className='show
 function page(key){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.dataset.section===key));document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===key));$('nav').classList.remove('open');scrollTo({top:0,behavior:'smooth'})}
 function empty(){return '<div class="empty"><b>Kho truyện đang được xây dựng</b>Các câu chuyện sẽ xuất hiện tại đây sau khi quản trị viên thêm và xuất bản.</div>'}
 function getFavorites(){
-  try{
-    return JSON.parse(
-      localStorage.getItem('disanviet-favorites')||'[]'
-    );
-  }catch{
-    return [];
-  }
+  return favorites;
 }
 
 function isFavorite(id){
-  return getFavorites().includes(String(id));
+  return favorites.includes(String(id));
+}
+
+async function loadFavorites(){
+  favorites=[];
+
+  if(!db||!user){
+    updateProfileUI();
+    render();
+    return;
+  }
+
+  let {data,error}=await db
+    .from('user_favorites')
+    .select('story_id')
+    .eq('user_id',user.id);
+
+  if(error){
+    console.error('Lỗi tải truyện yêu thích:',error);
+    toast('Không tải được truyện yêu thích.',true);
+    return;
+  }
+
+  favorites=(data||[]).map(x=>String(x.story_id));
+
+  updateProfileUI();
+  render();
 }
 function card(s){
   let d=new DOMParser().parseFromString(
@@ -147,6 +167,7 @@ async function refresh(){
   $('open-auth').textContent=
     user?(admin?'Quản trị':'Tài khoản'):'Đăng nhập';
 
+  await loadFavorites();
   updateProfileUI();
 }
 
@@ -310,32 +331,67 @@ $('clear-search').addEventListener('click',()=>{
   renderSearch();
   $('search-input').focus();
 });
-document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));document.querySelectorAll('.backdrop').forEach(b=>b.onclick=e=>{if(e.target===b)modal(b.id,false)});document.addEventListener('click',async e=>{
+document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));document.querySelectorAll('.backdrop').forEach(b=>b.onclick=e=>{if(e.target===b)modal(b.id,false)});
+document.addEventListener('click',async e=>{
   let fav=e.target.closest('[data-favorite]');
 
   if(fav){
+    e.preventDefault();
     e.stopPropagation();
 
-    let id=String(fav.dataset.favorite);
-    let a=getFavorites();
-
-    if(a.includes(id)){
-      a=a.filter(x=>x!==id);
-    }else{
-      a.push(id);
+    if(!user){
+      modal('auth-modal',true);
+      $('auth-message').textContent=
+        'Bé đăng nhập để lưu truyện yêu thích nhé.';
+      return;
     }
 
-    localStorage.setItem(
-      'disanviet-favorites',
-      JSON.stringify(a)
-    );
+    let id=String(fav.dataset.favorite);
+    let exists=favorites.includes(id);
 
-    render();
+    fav.disabled=true;
+
+    try{
+      if(exists){
+        let {error}=await db
+          .from('user_favorites')
+          .delete()
+          .eq('user_id',user.id)
+          .eq('story_id',id);
+
+        if(error)throw error;
+
+        favorites=favorites.filter(x=>x!==id);
+        toast('Đã bỏ truyện khỏi yêu thích.');
+      }else{
+        let {error}=await db
+          .from('user_favorites')
+          .insert({
+            user_id:user.id,
+            story_id:id
+          });
+
+        if(error)throw error;
+
+        favorites.push(id);
+        toast('Đã thêm truyện vào yêu thích.');
+      }
+
+      render();
+      updateProfileUI();
+    }catch(err){
+      console.error('Lỗi lưu yêu thích:',err);
+      toast('Không lưu được yêu thích: '+err.message,true);
+    }
     return;
   }
 
   let c=e.target.closest('[data-story]');
-if(c){let s=stories.find(x=>x.id===c.dataset.story);if(s){$('reader-category').textContent=s.category;$('reader-title').textContent=s.title;$('reader-meta').textContent=s.author_name||'Kho tàng truyện dân gian địa phương';
+
+  if(c){
+    let s=stories.find(x=>String(x.id)===c.dataset.story);
+ 
+    if(s){$('reader-category').textContent=s.category;$('reader-title').textContent=s.title;$('reader-meta').textContent=s.author_name||'Kho tàng truyện dân gian địa phương';
 let doc=new DOMParser().parseFromString(
   s.content||'','text/html'
 );
