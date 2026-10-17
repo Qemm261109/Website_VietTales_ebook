@@ -1,6 +1,12 @@
 (() => {
 const $=id=>document.getElementById(id);
 let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,favorites=[];
+  if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+  db = window.supabase.createClient(
+    window.SUPABASE_URL,
+    window.SUPABASE_ANON_KEY
+  );
+}
 let storyHtml='',storyTextSnapshot='';
 const routes={'Truyền Thuyết':'truyen-thuyet','Truyện Cười':'truyen-cuoi','Truyện Cổ Tích':'truyen-co-tich','Truyện Giải Thích Địa Phương':'truyen-dia-phuong'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
