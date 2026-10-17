@@ -192,6 +192,9 @@ async function refresh(){
 function updateProfileUI(){
   if(!$('profile-name'))return;
 
+  const avatar=$('profile-avatar');
+  const placeholder=$('profile-avatar-placeholder');
+
   if(user){
     $('profile-name').textContent=
       user.user_metadata?.full_name||
@@ -200,16 +203,37 @@ function updateProfileUI(){
 
     $('profile-email').textContent=user.email||'';
     $('profile-message').textContent='';
+
+    const url=user.user_metadata?.avatar_url;
+
+    if(avatar && url){
+      avatar.src=url;
+      avatar.hidden=false;
+      if(placeholder)placeholder.hidden=true;
+    }else{
+      if(avatar){
+        avatar.removeAttribute('src');
+        avatar.hidden=true;
+      }
+      if(placeholder)placeholder.hidden=false;
+    }
   }else{
     $('profile-name').textContent='Độc giả DI SẢN VIỆT';
     $('profile-email').textContent=
       'Đăng nhập để xem thông tin tài khoản';
     $('profile-message').textContent=
       'Bé hãy đăng nhập để sử dụng các tính năng cá nhân nhé.';
+
+    if(avatar){
+      avatar.removeAttribute('src');
+      avatar.hidden=true;
+    }
+    if(placeholder)placeholder.hidden=false;
   }
 
   $('stat-favorite').textContent=getFavorites().length;
 }
+
 
 async function submitAuth(e){e.preventDefault();if(!db){$('auth-message').textContent='Chưa cấu hình Supabase trong config.js.';return}let email=$('auth-email').value.trim(),password=$('auth-password').value;try{let r=mode==='login'?await db.auth.signInWithPassword({email,password}):await db.auth.signUp({email,password});if(r.error)throw r.error;if(mode==='signup'){$('auth-message').textContent='Đã gửi yêu cầu đăng ký. Kiểm tra email nếu cần xác nhận.';return}await refresh();modal('auth-modal',false);if(admin)await openAdmin();else toast('Đăng nhập thành công.')}catch(e){$('auth-message').textContent=e.message||'Không thể đăng nhập.'}}
 async function openAdmin(){await refresh();if(!user){modal('auth-modal',true);$('auth-message').textContent='Đăng nhập tài khoản quản trị trước nhé.';return}if(!admin){toast('Tài khoản này chưa được cấp quyền quản trị.',true);return}$('admin-user').textContent=user.email;modal('admin-modal',true);await adminList()}
@@ -481,6 +505,69 @@ modal('reader-modal',true);
 return;
 }
 let ed=e.target.closest('[data-edit]');if(ed){edit(ed.dataset.edit);return}let pub=e.target.closest('[data-publish]');if(pub){let s=stories.find(x=>x.id===pub.dataset.publish);let r=await db.from('stories').update({is_published:!s.is_published}).eq('id',s.id);if(r.error)toast(r.error.message,true);else await adminList();return}let del=e.target.closest('[data-delete]');if(del){let s=stories.find(x=>x.id===del.dataset.delete);if(s&&confirm(`Xóa truyện “${s.title}”?`)){let r=await db.from('stories').delete().eq('id',s.id);if(r.error)toast(r.error.message,true);else await adminList()} }});$('new-story').onclick=()=>{reset();tab('editor')};$('cancel-edit').onclick=()=>{reset();tab('list')};document.querySelectorAll('.admin-tab').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='editor'&&!$('story-id').value)reset();tab(b.dataset.tab)});$('story-form').onsubmit=save;
+  
+$('avatar-upload').onchange=async e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+
+  const message=$('profile-message');
+
+  try{
+    if(!db||!user){
+      throw Error('Bé hãy đăng nhập trước khi đổi ảnh nhé.');
+    }
+
+    const types={
+      'image/jpeg':'jpg',
+      'image/png':'png',
+      'image/webp':'webp',
+      'image/gif':'gif'
+    };
+
+    if(!types[file.type]){
+      throw Error('Bé hãy chọn ảnh JPG, PNG, WEBP hoặc GIF nhé.');
+    }
+
+    if(file.size>5*1024*1024){
+      throw Error('Ảnh đại diện phải nhỏ hơn 5 MB nhé.');
+    }
+
+    message.textContent='Đang tải ảnh lên...';
+
+    const ext=types[file.type];
+    const path=`${user.id}/avatar-${crypto.randomUUID()}.${ext}`;
+
+    const upload=await db.storage
+      .from('story-images')
+      .upload(path,file,{
+        contentType:file.type
+      });
+
+    if(upload.error)throw upload.error;
+
+    const url=db.storage
+      .from('story-images')
+      .getPublicUrl(path).data.publicUrl;
+
+    const result=await db.auth.updateUser({
+      data:{avatar_url:url}
+    });
+
+    if(result.error)throw result.error;
+
+    user=result.data.user||user;
+    updateProfileUI();
+
+    message.textContent='Đổi ảnh đại diện thành công! 💗';
+  }catch(err){
+    console.error('Lỗi đổi ảnh đại diện:',err);
+    message.textContent=
+      'Không đổi được ảnh: '+err.message;
+  }finally{
+    e.target.value='';
+  }
+};
+
 $('docx').onchange=async e=>{
   let f=e.target.files[0];
   if(!f)return;
