@@ -127,7 +127,51 @@ function render(){
 async function load(){if(!db){render();return}let {data,error}=await db.from('stories').select('*').eq('is_published',true).order('created_at',{ascending:false});if(error){console.error(error);render();return}stories=data||[];render()}
 function modal(id,open){$(id).hidden=!open;document.body.style.overflow=open?'hidden':''}
 function authTab(m){mode=m;$('auth-title').textContent=m==='login'?'Đăng nhập':'Tạo tài khoản';$('auth-submit').textContent=m==='login'?'Đăng nhập':'Đăng ký';$('login-tab').classList.toggle('selected',m==='login');$('signup-tab').classList.toggle('selected',m==='signup');$('auth-message').textContent=''}
-async function refresh(){if(!db)return;let r=await db.auth.getUser();user=r.data.user;admin=false;if(user){let a=await db.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle();admin=!!a.data&&!a.error}$('open-auth').textContent=user?(admin?'Quản trị':'Tài khoản'):'Đăng nhập'}
+async function refresh(){
+  if(!db)return;
+
+  let r=await db.auth.getUser();
+  user=r.data.user;
+  admin=false;
+
+  if(user){
+    let a=await db
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id',user.id)
+      .maybeSingle();
+
+    admin=!!a.data&&!a.error;
+  }
+
+  $('open-auth').textContent=
+    user?(admin?'Quản trị':'Tài khoản'):'Đăng nhập';
+
+  updateProfileUI();
+}
+
+function updateProfileUI(){
+  if(!$('profile-name'))return;
+
+  if(user){
+    $('profile-name').textContent=
+      user.user_metadata?.full_name||
+      user.email?.split('@')[0]||
+      'Độc giả DI SẢN VIỆT';
+
+    $('profile-email').textContent=user.email||'';
+    $('profile-message').textContent='';
+  }else{
+    $('profile-name').textContent='Độc giả DI SẢN VIỆT';
+    $('profile-email').textContent=
+      'Đăng nhập để xem thông tin tài khoản';
+    $('profile-message').textContent=
+      'Bé hãy đăng nhập để sử dụng các tính năng cá nhân nhé.';
+  }
+
+  $('stat-favorite').textContent=getFavorites().length;
+}
+
 async function submitAuth(e){e.preventDefault();if(!db){$('auth-message').textContent='Chưa cấu hình Supabase trong config.js.';return}let email=$('auth-email').value.trim(),password=$('auth-password').value;try{let r=mode==='login'?await db.auth.signInWithPassword({email,password}):await db.auth.signUp({email,password});if(r.error)throw r.error;if(mode==='signup'){$('auth-message').textContent='Đã gửi yêu cầu đăng ký. Kiểm tra email nếu cần xác nhận.';return}await refresh();modal('auth-modal',false);if(admin)await openAdmin();else toast('Đăng nhập thành công.')}catch(e){$('auth-message').textContent=e.message||'Không thể đăng nhập.'}}
 async function openAdmin(){await refresh();if(!user){modal('auth-modal',true);$('auth-message').textContent='Đăng nhập tài khoản quản trị trước nhé.';return}if(!admin){toast('Tài khoản này chưa được cấp quyền quản trị.',true);return}$('admin-user').textContent=user.email;modal('admin-modal',true);await adminList()}
 function tab(name){document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('selected',b.dataset.tab===name));$('admin-list').hidden=name!=='list';$('admin-editor').hidden=name!=='editor'}
