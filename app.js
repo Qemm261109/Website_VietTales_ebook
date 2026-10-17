@@ -16,7 +16,80 @@ function card(s){
   let excerpt=s.summary||text.slice(0,140);
 
 return `<article class="card" tabindex="0" data-story="${esc(s.id)}"><div class="cover">${s.image_url?`<img src="${esc(s.image_url)}" alt="${esc(s.title)}">`:'✦'}</div><div class="card-body"><span class="tag">${esc(s.category)}</span><h3>${esc(s.title)}</h3><p>${esc(excerpt.slice(0,150))}${excerpt.length>150?'…':''}</p><span class="read">ĐỌC CÂU CHUYỆN →</span></div></article>`}
-function render(){let pub=stories.filter(s=>s.is_published),feat=pub.filter(s=>s.is_featured);$('featured').innerHTML=feat.length?feat.slice(0,6).map(card).join(''):empty();document.querySelectorAll('.category-grid').forEach(el=>{let a=pub.filter(s=>s.category===el.dataset.category);el.innerHTML=a.length?a.map(card).join(''):empty()})}
+
+function normalize(s){
+  return String(s??'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/đ/g,'d')
+    .replace(/Đ/g,'D')
+    .toLowerCase()
+    .trim();
+}
+
+function renderSearch(){
+  let input=$('search-input');
+  let category=$('search-category');
+  let results=$('search-results');
+  let status=$('search-status');
+  let clear=$('clear-search');
+
+  if(!input||!category||!results||!status||!clear)return;
+
+  let q=normalize(input.value);
+  let c=category.value;
+
+  clear.hidden=!input.value&&!c;
+
+  if(!q&&!c){
+    results.innerHTML='';
+    status.textContent='';
+    return;
+  }
+
+  let words=q.split(/\s+/).filter(Boolean);
+
+  let found=stories.filter(s=>{
+    if(!s.is_published)return false;
+    if(c&&s.category!==c)return false;
+
+    let doc=new DOMParser().parseFromString(
+      s.content||'','text/html'
+    );
+
+    let all=normalize([
+      s.title,
+      s.summary,
+      s.category,
+      doc.body.textContent
+    ].join(' '));
+
+    return words.every(w=>all.includes(w));
+  });
+
+  results.innerHTML=found.length
+    ?found.map(card).join('')
+    :'<div class="empty"><b>Chưa tìm thấy truyện phù hợp</b>Em hãy thử từ khóa khác hoặc chọn thể loại khác nhé.</div>';
+
+  status.textContent=`Tìm thấy ${found.length} truyện.`;
+}
+
+function render(){
+  let pub=stories.filter(s=>s.is_published);
+  let feat=pub.filter(s=>s.is_featured);
+
+  $('featured').innerHTML=feat.length
+    ?feat.slice(0,6).map(card).join('')
+    :empty();
+
+  document.querySelectorAll('.category-grid').forEach(el=>{
+    let a=pub.filter(s=>s.category===el.dataset.category);
+    el.innerHTML=a.length?a.map(card).join(''):empty();
+  });
+
+  renderSearch();
+}
+
 async function load(){if(!db){render();return}let {data,error}=await db.from('stories').select('*').eq('is_published',true).order('created_at',{ascending:false});if(error){console.error(error);render();return}stories=data||[];render()}
 function modal(id,open){$(id).hidden=!open;document.body.style.overflow=open?'hidden':''}
 function authTab(m){mode=m;$('auth-title').textContent=m==='login'?'Đăng nhập':'Tạo tài khoản';$('auth-submit').textContent=m==='login'?'Đăng nhập':'Đăng ký';$('login-tab').classList.toggle('selected',m==='login');$('signup-tab').classList.toggle('selected',m==='signup');$('auth-message').textContent=''}
@@ -149,7 +222,17 @@ async function save(e){
   }
 }
 
-async function init(){document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));document.querySelectorAll('.backdrop').forEach(b=>b.onclick=e=>{if(e.target===b)modal(b.id,false)});document.addEventListener('click',async e=>{let c=e.target.closest('[data-story]');if(c){let s=stories.find(x=>x.id===c.dataset.story);if(s){$('reader-category').textContent=s.category;$('reader-title').textContent=s.title;$('reader-meta').textContent=s.author_name||'Kho tàng truyện dân gian địa phương';
+async function init(){
+$('search-input').addEventListener('input',renderSearch);
+$('search-category').addEventListener('change',renderSearch);
+
+$('clear-search').addEventListener('click',()=>{
+  $('search-input').value='';
+  $('search-category').value='';
+  renderSearch();
+  $('search-input').focus();
+});
+document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));document.querySelectorAll('.backdrop').forEach(b=>b.onclick=e=>{if(e.target===b)modal(b.id,false)});document.addEventListener('click',async e=>{let c=e.target.closest('[data-story]');if(c){let s=stories.find(x=>x.id===c.dataset.story);if(s){$('reader-category').textContent=s.category;$('reader-title').textContent=s.title;$('reader-meta').textContent=s.author_name||'Kho tàng truyện dân gian địa phương';
 let doc=new DOMParser().parseFromString(
   s.content||'','text/html'
 );
