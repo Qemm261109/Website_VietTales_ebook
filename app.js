@@ -128,6 +128,7 @@ function renderSearch(){
   status.textContent=`Tìm thấy ${found.length} truyện.`;
 }
 
+
 function render(){
   let pub=stories.filter(s=>s.is_published);
   let feat=pub.filter(s=>s.is_featured);
@@ -141,8 +142,19 @@ function render(){
     el.innerHTML=a.length?a.map(card).join(''):empty();
   });
 
+  let favoriteBox=$('favorite-stories');
+
+  if(favoriteBox){
+    let saved=pub.filter(s=>isFavorite(s.id));
+
+    favoriteBox.innerHTML=saved.length
+      ?saved.map(card).join('')
+      :'<div class="empty"><b>Chưa có truyện yêu thích</b>Hãy nhấn ♡ ở truyện bạn muốn lưu lại nhé.</div>';
+  }
+
   renderSearch();
 }
+
 
 async function load(){if(!db){render();return}let {data,error}=await db.from('stories').select('*').eq('is_published',true).order('created_at',{ascending:false});if(error){console.error(error);render();return}stories=data||[];render()}
 function modal(id,open){$(id).hidden=!open;document.body.style.overflow=open?'hidden':''}
@@ -542,6 +554,22 @@ console.log('Số ảnh đọc được:', (r.value.match(/<img\b/gi)||[]).lengt
       err.message||'Không đọc được file Word.';
   }
 };
-$('logout').onclick=async()=>{await db.auth.signOut();user=null;admin=false;$('open-auth').textContent='Đăng nhập';modal('admin-modal',false);toast('Đã đăng xuất.')};let ok=window.SUPABASE_URL&&!SUPABASE_URL.includes('PASTE_YOUR')&&window.SUPABASE_ANON_KEY&&!SUPABASE_ANON_KEY.includes('PASTE_YOUR');if(ok&&window.supabase){db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);db.auth.onAuthStateChange(()=>setTimeout(refresh,0));await refresh();await load()}else render()}
+
+$('logout').onclick=async()=>{
+  await db.auth.signOut();
+
+  user=null;
+  admin=false;
+  favorites=[];
+
+  $('open-auth').textContent='Đăng nhập';
+
+  updateProfileUI();
+  render();
+
+  modal('admin-modal',false);
+  toast('Đã đăng xuất.');
+};
+}
 document.addEventListener('DOMContentLoaded',init);
 })();
