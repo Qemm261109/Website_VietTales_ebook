@@ -507,7 +507,10 @@ return;
 let ed=e.target.closest('[data-edit]');if(ed){edit(ed.dataset.edit);return}let pub=e.target.closest('[data-publish]');if(pub){let s=stories.find(x=>x.id===pub.dataset.publish);let r=await db.from('stories').update({is_published:!s.is_published}).eq('id',s.id);if(r.error)toast(r.error.message,true);else await adminList();return}let del=e.target.closest('[data-delete]');if(del){let s=stories.find(x=>x.id===del.dataset.delete);if(s&&confirm(`Xóa truyện “${s.title}”?`)){let r=await db.from('stories').delete().eq('id',s.id);if(r.error)toast(r.error.message,true);else await adminList()} }});$('new-story').onclick=()=>{reset();tab('editor')};$('cancel-edit').onclick=()=>{reset();tab('list')};document.querySelectorAll('.admin-tab').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='editor'&&!$('story-id').value)reset();tab(b.dataset.tab)});$('story-form').onsubmit=save;
   
 $('avatar-upload').onchange=async e=>{
-  const file=e.target.files[0];
+    const file=e.target.files[0];
+
+  alert('Đã nhận sự kiện chọn ảnh!');
+
   if(!file)return;
 
   const message=$('profile-message');
