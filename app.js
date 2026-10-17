@@ -7,15 +7,49 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function toast(s,error=false){let t=$('toast');t.textContent=s;t.className='show'+(error?' error':'');setTimeout(()=>t.className='',3500)}
 function page(key){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.dataset.section===key));document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===key));$('nav').classList.remove('open');scrollTo({top:0,behavior:'smooth'})}
 function empty(){return '<div class="empty"><b>Kho truyện đang được xây dựng</b>Các câu chuyện sẽ xuất hiện tại đây sau khi quản trị viên thêm và xuất bản.</div>'}
+function getFavorites(){
+  try{
+    return JSON.parse(
+      localStorage.getItem('disanviet-favorites')||'[]'
+    );
+  }catch{
+    return [];
+  }
+}
 
+function isFavorite(id){
+  return getFavorites().includes(String(id));
+}
 function card(s){
   let d=new DOMParser().parseFromString(
     s.content||'','text/html'
   );
+
   let text=d.body.textContent.trim();
   let excerpt=s.summary||text.slice(0,140);
+  let favorite=isFavorite(s.id);
 
-return `<article class="card" tabindex="0" data-story="${esc(s.id)}"><div class="cover">${s.image_url?`<img src="${esc(s.image_url)}" alt="${esc(s.title)}">`:'✦'}</div><div class="card-body"><span class="tag">${esc(s.category)}</span><h3>${esc(s.title)}</h3><p>${esc(excerpt.slice(0,150))}${excerpt.length>150?'…':''}</p><span class="read">ĐỌC CÂU CHUYỆN →</span></div></article>`}
+  return `<article class="card" tabindex="0" data-story="${esc(s.id)}">
+    <div class="cover">
+      ${s.image_url
+        ?`<img src="${esc(s.image_url)}" alt="${esc(s.title)}">`
+        :'✦'}
+    </div>
+    <div class="card-body">
+      <span class="tag">${esc(s.category)}</span>
+      <button
+        type="button"
+        class="favorite-btn"
+        data-favorite="${esc(s.id)}"
+        aria-pressed="${favorite}"
+        aria-label="${favorite?'Bỏ yêu thích':'Thêm vào yêu thích'}"
+      >${favorite?'♥':'♡'}</button>
+      <h3>${esc(s.title)}</h3>
+      <p>${esc(excerpt.slice(0,150))}${excerpt.length>150?'…':''}</p>
+      <span class="read">ĐỌC CÂU CHUYỆN →</span>
+    </div>
+  </article>`;
+}
 
 function normalize(s){
   return String(s??'')
@@ -232,7 +266,32 @@ $('clear-search').addEventListener('click',()=>{
   renderSearch();
   $('search-input').focus();
 });
-document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));document.querySelectorAll('.backdrop').forEach(b=>b.onclick=e=>{if(e.target===b)modal(b.id,false)});document.addEventListener('click',async e=>{let c=e.target.closest('[data-story]');if(c){let s=stories.find(x=>x.id===c.dataset.story);if(s){$('reader-category').textContent=s.category;$('reader-title').textContent=s.title;$('reader-meta').textContent=s.author_name||'Kho tàng truyện dân gian địa phương';
+document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));document.querySelectorAll('.backdrop').forEach(b=>b.onclick=e=>{if(e.target===b)modal(b.id,false)});document.addEventListener('click',async e=>{
+  let fav=e.target.closest('[data-favorite]');
+
+  if(fav){
+    e.stopPropagation();
+
+    let id=String(fav.dataset.favorite);
+    let a=getFavorites();
+
+    if(a.includes(id)){
+      a=a.filter(x=>x!==id);
+    }else{
+      a.push(id);
+    }
+
+    localStorage.setItem(
+      'disanviet-favorites',
+      JSON.stringify(a)
+    );
+
+    render();
+    return;
+  }
+
+  let c=e.target.closest('[data-story]');
+if(c){let s=stories.find(x=>x.id===c.dataset.story);if(s){$('reader-category').textContent=s.category;$('reader-title').textContent=s.title;$('reader-meta').textContent=s.author_name||'Kho tàng truyện dân gian địa phương';
 let doc=new DOMParser().parseFromString(
   s.content||'','text/html'
 );
