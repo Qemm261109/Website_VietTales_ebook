@@ -2,6 +2,45 @@
 <section class="page" data-section="trang-chu"><div class="hero">
 
 <div><span class="eyebrow">GÌN GIỮ CHUYỆN XƯA · LAN TỎA GIÁ TRỊ MỚI</span><h1>Xây dựng mô hình số hóa truyện dân gian địa phương góp phần bảo tồn và lan tỏa di sản văn hóa trong môi trường số</h1><p>Khám phá những câu chuyện được lưu truyền qua nhiều thế hệ, tìm hiểu ký ức văn hóa và tình yêu quê hương qua kho tàng truyện dân gian địa phương.</p><a class="button pale" href="#truyen-thuyet">Khám phá truyện ↗</a></div><div class="art"><div class="sun"></div><div class="mountain"></div><div class="book">✦<br><b>CHUYỆN<br>QUÊ MÌNH</b></div><i>Mỗi câu chuyện<br>là một mảnh ký ức</i></div></div>
+
+
+<div class="content">
+  <div class="section-title">
+    <span class="eyebrow">KHÁM PHÁ KHO TÀNG</span>
+    <h2>Tìm kiếm truyện dân gian</h2>
+    <p>Tìm truyện theo tên, từ khóa, thể loại hoặc nội dung câu chuyện.</p>
+  </div>
+
+  <div class="search-panel">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input
+        type="search"
+        id="search-input"
+        placeholder="Nhập tên truyện hoặc từ khóa..."
+        aria-label="Tìm kiếm truyện dân gian"
+      >
+      <button type="button" id="clear-search" hidden>Xóa</button>
+    </div>
+
+    <div class="search-options">
+      <label for="search-category">Thể loại:</label>
+      <select id="search-category">
+        <option value="">Tất cả thể loại</option>
+        <option value="Truyền Thuyết">Truyền Thuyết</option>
+        <option value="Truyện Cười">Truyện Cười</option>
+        <option value="Truyện Cổ Tích">Truyện Cổ Tích</option>
+        <option value="Truyện Giải Thích Địa Phương">Truyện Giải Thích Địa Phương</option>
+        <option value="Giai thoại">Giai thoại</option>
+        <option value="Truyện danh nhân">Truyện danh nhân</option>
+      </select>
+    </div>
+
+    <p id="search-status" class="search-status" aria-live="polite"></p>
+    <div id="search-results" class="grid"></div>
+  </div>
+</div>
+
 <div class="content">
   <div class="section-title">
     <span class="eyebrow">ĐỌC VÀ KHÁM PHÁ</span>
@@ -10,6 +49,8 @@
   </div>
   <div id="featured" class="grid"></div>
 </div>
+
+
 <div class="quote">
   “Giữ gìn truyện xưa là giữ gìn ký ức, bản sắc và tâm hồn của quê hương.”
 </div>
