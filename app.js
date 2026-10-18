@@ -390,6 +390,7 @@ async function save(e){
 }
 
 async function init(){
+  await load();
 $('search-input').addEventListener('input',renderSearch);
 $('search-category').addEventListener('change',renderSearch);
 
