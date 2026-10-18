@@ -162,7 +162,33 @@ function render(){
 }
 
 
-async function load(){if(!db){render();return}let {data,error}=await db.from('stories').select('*').eq('is_published',true).order('created_at',{ascending:false});if(error){console.error(error);render();return}stories=data||[];render()}
+
+async function load(){
+  if(!db){
+    console.error('Supabase chưa kết nối');
+    render();
+    return;
+  }
+
+  let {data,error}=await db
+    .from('stories')
+    .select('*')
+    .eq('is_published',true)
+    .order('created_at',{ascending:false});
+
+  console.log('TRUYỆN TẢI ĐƯỢC:',data);
+  console.log('LỖI SUPABASE:',error);
+
+  if(error){
+    console.error(error);
+    render();
+    return;
+  }
+
+  stories=data||[];
+  render();
+}
+
 function modal(id,open){$(id).hidden=!open;document.body.style.overflow=open?'hidden':''}
 function authTab(m){mode=m;$('auth-title').textContent=m==='login'?'Đăng nhập':'Tạo tài khoản';$('auth-submit').textContent=m==='login'?'Đăng nhập':'Đăng ký';$('login-tab').classList.toggle('selected',m==='login');$('signup-tab').classList.toggle('selected',m==='signup');$('auth-message').textContent=''}
 async function refresh(){
