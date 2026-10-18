@@ -8,7 +8,13 @@ let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,favorit
   );
 }
 let storyHtml='',storyTextSnapshot='';
-const routes={'Truyền Thuyết':'truyen-thuyet','Truyện Cười':'truyen-cuoi','Truyện Cổ Tích':'truyen-co-tich','Truyện Giải Thích Địa Phương':'truyen-dia-phuong'};
+const routes={
+  'Truyền Thuyết':'truyen-thuyet',
+  'Truyện Cười':'truyen-cuoi',
+  'Truyện Cổ Tích':'truyen-co-tich',
+  'Truyện Giải Thích Địa Phương':'truyen-dia-phuong',
+  'Truyện Ngụ Ngôn':'truyen-ngu-ngon'
+};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(s,error=false){let t=$('toast');t.textContent=s;t.className='show'+(error?' error':'');setTimeout(()=>t.className='',3500)}
 function page(key){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.dataset.section===key));document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===key));$('nav').classList.remove('open');scrollTo({top:0,behavior:'smooth'})}
