@@ -69,3 +69,56 @@
   display: block;
   margin-bottom: 14px;
 }
+
+header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 65%;
+}
+
+header .brand-logo {
+  display: block;
+  width: 48px !important;
+  height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+header .brand div {
+  min-width: 0;
+}
+
+header .brand b,
+header .brand small {
+  display: block;
+}
+
+header .brand small {
+  font-size: 11px;
+}
+
+header .brand-logo:not([src]) {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  header .brand {
+    max-width: 58%;
+  }
+
+  header .brand-logo {
+    width: 38px !important;
+    height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+  }
+
+  header .brand small {
+    font-size: 9px;
+  }
+}
