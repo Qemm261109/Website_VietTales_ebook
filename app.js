@@ -1,6 +1,6 @@
 (() => {
 const $=id=>document.getElementById(id);
-let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,favorites=[];
+let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,audioPath=null,favorites=[];
   if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
   db = window.supabase.createClient(
     window.SUPABASE_URL,
