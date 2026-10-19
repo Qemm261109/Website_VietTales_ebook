@@ -94,19 +94,23 @@ function normalize(s){
     .trim();
 }
 
+
 function renderSearch(){
-  let input=$('search-input');
-  let category=$('search-category');
-  let results=$('search-results');
-  let status=$('search-status');
-  let clear=$('clear-search');
+  const input=$('search-input');
+  const category=$('search-category');
+  const sort=$('search-sort');
+  const results=$('search-results');
+  const status=$('search-status');
+  const clear=$('clear-search');
 
   if(!input||!category||!results||!status||!clear)return;
 
-  let q=normalize(input.value);
-  let c=category.value;
+  const q=normalize(input.value);
+  const c=category.value;
+  const words=q.split(/\s+/).filter(Boolean);
+  const order=sort?sort.value:'relevance';
 
-  clear.hidden=!input.value&&!c;
+  clear.hidden=!input.value.trim()&&!c;
 
   if(!q&&!c){
     results.innerHTML='';
@@ -114,32 +118,78 @@ function renderSearch(){
     return;
   }
 
-  let words=q.split(/\s+/).filter(Boolean);
+  const found=stories
+    .filter(s=>{
+      if(!s.is_published)return false;
+      if(c&&s.category!==c)return false;
 
-  let found=stories.filter(s=>{
-    if(!s.is_published)return false;
-    if(c&&s.category!==c)return false;
+      const doc=new DOMParser().parseFromString(
+        s.content||'','text/html'
+      );
 
-    let doc=new DOMParser().parseFromString(
-      s.content||'','text/html'
+      const title=normalize(s.title);
+      const summary=normalize(s.summary);
+      const cat=normalize(s.category);
+      const content=normalize(doc.body.textContent);
+      const author=normalize(s.author_name);
+
+      const all=[title,summary,cat,content,author].join(' ');
+
+      return words.every(w=>all.includes(w));
+    })
+    .map(s=>{
+      const doc=new DOMParser().parseFromString(
+        s.content||'','text/html'
+      );
+
+      const title=normalize(s.title);
+      const summary=normalize(s.summary);
+      const cat=normalize(s.category);
+      const content=normalize(doc.body.textContent);
+      const author=normalize(s.author_name);
+
+      let score=0;
+
+      for(const w of words){
+        if(title===w)score+=100;
+        else if(title.startsWith(w))score+=50;
+        else if(title.includes(w))score+=30;
+
+        if(summary.includes(w))score+=10;
+        if(cat.includes(w))score+=6;
+        if(author.includes(w))score+=3;
+        if(content.includes(w))score+=1;
+      }
+
+      if(q&&title===q)score+=100;
+      else if(q&&title.startsWith(q))score+=40;
+
+      return {...s,_score:score};
+    });
+
+  if(order==='title'){
+    found.sort((a,b)=>
+      normalize(a.title).localeCompare(normalize(b.title),'vi')
     );
+  }else if(order==='newest'){
+    found.sort((a,b)=>
+      (Date.parse(b.updated_at||b.created_at||'')||0)-
+      (Date.parse(a.updated_at||a.created_at||'')||0)
+    );
+  }else{
+    found.sort((a,b)=>b._score-a._score);
+  }
 
-    let all=normalize([
-      s.title,
-      s.summary,
-      s.category,
-      doc.body.textContent
-    ].join(' '));
-
-    return words.every(w=>all.includes(w));
-  });
-
-  results.innerHTML=found.length
-    ?found.map(card).join('')
-    :'<div class="empty"><b>Chưa tìm thấy truyện phù hợp</b>Em hãy thử từ khóa khác hoặc chọn thể loại khác nhé.</div>';
-
-  status.textContent=`Tìm thấy ${found.length} truyện.`;
+  if(found.length){
+    results.innerHTML=found.map(card).join('');
+    status.textContent=`Tìm thấy ${found.length} truyện phù hợp.`;
+  }else{
+    results.innerHTML=
+      '<div class="empty"><b>Chưa tìm thấy truyện phù hợp</b><p>Em thử bỏ bớt từ khóa hoặc chọn thể loại khác nhé.</p></div>';
+    status.textContent='Không tìm thấy truyện nào phù hợp.';
+  }
 }
+
 
 
 function render(){
@@ -429,10 +479,11 @@ async function init(){
   await load();
 $('search-input').addEventListener('input',renderSearch);
 $('search-category').addEventListener('change',renderSearch);
-
+$('search-sort').addEventListener('change',renderSearch);
 $('clear-search').addEventListener('click',()=>{
   $('search-input').value='';
   $('search-category').value='';
+  $('search-sort').value='relevance';
   renderSearch();
   $('search-input').focus();
 });
