@@ -283,3 +283,40 @@ header .brand > div {
   }
 }
 
+.search-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.search-options label {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.search-options select {
+  min-width: 180px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d6c5aa;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: #4b3828;
+  font: inherit;
+}
+
+@media (max-width: 600px) {
+  .search-options {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .search-options select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
