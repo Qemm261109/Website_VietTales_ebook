@@ -1,6 +1,10 @@
 (() => {
 const $=id=>document.getElementById(id);
 let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,audioPath=null,favorites=[];
+  let audioFile=null;
+  $('story-audio').onchange=e=>{
+  audioFile=e.target.files[0]||null;
+};
   if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
   db = window.supabase.createClient(
     window.SUPABASE_URL,
@@ -277,6 +281,7 @@ function reset(){
   $('story-id').value='';
   imagePath=null;
   audioPath=null;
+  audioFile=null;
   storyHtml='';
   storyTextSnapshot='';
   $('editor-title').textContent='Thêm truyện mới';
@@ -381,7 +386,32 @@ async function save(e){
       p.image_path=old?.image_path||null;
       p.image_url=old?.image_url||null;
     }
+    let audio=audioFile;
 
+    if(audio){
+      if(!audio.name.toLowerCase().endsWith('.mp3')){
+        throw Error('Vui lòng chọn file MP3.');
+      }
+
+      if(audio.size>20*1024*1024){
+        throw Error('File nghe truyện cần nhỏ hơn 20 MB.');
+      }
+
+      let path=`${user.id}/${crypto.randomUUID()}.mp3`;
+
+      let up=await db.storage
+        .from('story-audio')
+        .upload(path,audio,{
+          contentType:'audio/mpeg'
+        });
+
+      if(up.error)throw up.error;
+
+      p.audio_path=path;
+    }else if(id){
+      let old=stories.find(s=>String(s.id)===String(id));
+      p.audio_path=old?.audio_path||null;
+    }
     let r=id
       ?await db.from('stories').update(p).eq('id',id)
       :await db.from('stories').insert(p);
