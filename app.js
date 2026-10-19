@@ -477,16 +477,34 @@ async function save(e){
 
 async function init(){
   await load();
-$('search-input').addEventListener('input',renderSearch);
-$('search-category').addEventListener('change',renderSearch);
-$('search-sort').addEventListener('change',renderSearch);
-$('clear-search').addEventListener('click',()=>{
-  $('search-input').value='';
-  $('search-category').value='';
-  $('search-sort').value='relevance';
-  renderSearch();
-  $('search-input').focus();
-});
+  const searchInput=$('search-input');
+  const searchCategory=$('search-category');
+  const searchSort=$('search-sort');
+  const clearSearch=$('clear-search');
+
+  if(searchInput){
+    searchInput.addEventListener('input',renderSearch);
+  }
+
+  if(searchCategory){
+    searchCategory.addEventListener('change',renderSearch);
+  }
+
+  if(searchSort){
+    searchSort.addEventListener('change',renderSearch);
+  }
+
+  if(clearSearch){
+    clearSearch.addEventListener('click',()=>{
+      if(searchInput)searchInput.value='';
+      if(searchCategory)searchCategory.value='';
+      if(searchSort)searchSort.value='relevance';
+
+      renderSearch();
+
+      if(searchInput)searchInput.focus();
+    });
+  }
 document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();history.pushState(null,'','#'+a.dataset.page);page(a.dataset.page)}));window.addEventListener('hashchange',()=>page((location.hash||'#trang-chu').slice(1)));page((location.hash||'#trang-chu').slice(1));$('menu-toggle').onclick=()=>$('nav').classList.toggle('open');$('open-auth').onclick=async()=>{if(user&&admin)await openAdmin();else modal('auth-modal',true)};$('login-tab').onclick=()=>authTab('login');$('signup-tab').onclick=()=>authTab('signup');$('auth-form').onsubmit=submitAuth;$('view-favorites').onclick=()=>{
   if(!user){
     modal('auth-modal',true);
