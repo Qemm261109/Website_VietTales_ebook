@@ -151,3 +151,135 @@ header .brand > div {
     max-height: 38px !important;
   }
 }
+
+/* ===== GIAO DIỆN TÌM KIẾM TRUYỆN ===== */
+
+.search-panel {
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 24px #493b240a;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper);
+  border: 1px solid #d9cbb7;
+  border-radius: 12px;
+  padding: 6px 10px 6px 14px;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.search-box:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px #c29a581c;
+}
+
+.search-icon {
+  color: var(--red);
+  font-size: 25px;
+  line-height: 1;
+}
+
+#search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 12px 0;
+  color: var(--ink);
+  font: 13px 'Be Vietnam Pro', sans-serif;
+}
+
+#search-input::placeholder {
+  color: #999184;
+}
+
+#clear-search {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf8;
+  color: var(--red);
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#clear-search[hidden] {
+  display: none;
+}
+
+.search-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.search-options label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#search-category,
+#search-sort {
+  min-width: 160px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffdf8;
+  color: var(--ink);
+  padding: 10px 12px;
+  font: 12px 'Be Vietnam Pro', sans-serif;
+  outline: none;
+}
+
+#search-category:focus,
+#search-sort:focus {
+  border-color: var(--gold);
+}
+
+.search-status {
+  min-height: 18px;
+  margin: 15px 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+#search-results:empty {
+  display: none;
+}
+
+#search-results .empty {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .search-panel {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .search-options {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  #search-category,
+  #search-sort {
+    width: 100%;
+  }
+
+  .search-status {
+    margin-top: 12px;
+  }
+}
+
