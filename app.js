@@ -276,12 +276,14 @@ function reset(){
   $('story-form').reset();
   $('story-id').value='';
   imagePath=null;
+  audioPath=null;
   storyHtml='';
   storyTextSnapshot='';
   $('editor-title').textContent='Thêm truyện mới';
   $('story-message').textContent='';
   $('docx').value='';
   $('story-image').value='';
+  $('story-audio').value='';
 }
 
 function edit(id){
@@ -314,6 +316,7 @@ function edit(id){
   $('featured').checked=s.is_featured;
   $('published').checked=s.is_published;
   imagePath=s.image_path;
+  audioPath=s.audio_path||null;
   $('editor-title').textContent='Chỉnh sửa truyện';
 
   tab('editor');
