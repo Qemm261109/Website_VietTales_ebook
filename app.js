@@ -321,7 +321,68 @@ function updateProfileUI(){
 async function submitAuth(e){e.preventDefault();if(!db){$('auth-message').textContent='Chưa cấu hình Supabase trong config.js.';return}let email=$('auth-email').value.trim(),password=$('auth-password').value;try{let r=mode==='login'?await db.auth.signInWithPassword({email,password}):await db.auth.signUp({email,password});if(r.error)throw r.error;if(mode==='signup'){$('auth-message').textContent='Đã gửi yêu cầu đăng ký. Kiểm tra email nếu cần xác nhận.';return}await refresh();modal('auth-modal',false);if(admin)await openAdmin();else toast('Đăng nhập thành công.')}catch(e){$('auth-message').textContent=e.message||'Không thể đăng nhập.'}}
 async function openAdmin(){await refresh();if(!user){modal('auth-modal',true);$('auth-message').textContent='Đăng nhập tài khoản quản trị trước nhé.';return}if(!admin){toast('Tài khoản này chưa được cấp quyền quản trị.',true);return}$('admin-user').textContent=user.email;modal('admin-modal',true);await adminList()}
 function tab(name){document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('selected',b.dataset.tab===name));$('admin-list').hidden=name!=='list';$('admin-editor').hidden=name!=='editor'}
-async function adminList(){let r=await db.from('stories').select('*').order('created_at',{ascending:false});if(r.error){toast(r.error.message,true);return}stories=r.data||[];render();$('admin-stories').innerHTML=stories.length?stories.map(s=>`<div class="admin-row"><div><b>${esc(s.title)}</b><small>${esc(s.category)} · ${s.is_published?'Đã xuất bản':'Bản nháp'}${s.is_featured?' · Nổi bật':''}</small></div><div><button data-edit="${s.id}">Sửa</button><button data-publish="${s.id}">${s.is_published?'Gỡ xuất bản':'Xuất bản'}</button><button class="danger" data-delete="${s.id}">Xóa</button></div></div>`).join(''):empty()}
+
+function updateAdminStats(data){
+  const total=data.length;
+  const published=data.filter(s=>s.is_published).length;
+  const drafts=total-published;
+  const categories=new Set(
+    data.map(s=>s.category).filter(Boolean)
+  ).size;
+
+  if($('admin-total'))
+    $('admin-total').textContent=total;
+
+  if($('admin-published'))
+    $('admin-published').textContent=published;
+
+  if($('admin-drafts'))
+    $('admin-drafts').textContent=drafts;
+
+  if($('admin-categories'))
+    $('admin-categories').textContent=categories;
+}
+
+async function adminList(){
+  let r=await db
+    .from('stories')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if(r.error){
+    toast(r.error.message,true);
+    return;
+  }
+
+  stories=r.data||[];
+
+  updateAdminStats(stories);
+  render();
+
+  $('admin-stories').innerHTML=stories.length
+    ?stories.map(s=>`
+      <div class="admin-row">
+        <div>
+          <b>${esc(s.title)}</b>
+          <small>
+            ${esc(s.category)} ·
+            ${s.is_published?'Đã xuất bản':'Bản nháp'}
+            ${s.is_featured?' · Nổi bật':''}
+          </small>
+        </div>
+        <div>
+          <button data-edit="${s.id}">Sửa</button>
+          <button data-publish="${s.id}">
+            ${s.is_published?'Gỡ xuất bản':'Xuất bản'}
+          </button>
+          <button class="danger" data-delete="${s.id}">
+            Xóa
+          </button>
+        </div>
+      </div>
+    `).join('')
+    :empty();
+}
 
 function reset(){
   $('story-form').reset();
@@ -475,8 +536,45 @@ async function save(e){
   }
 }
 
+
+function initTheme(){
+  const btn=$('theme-toggle');
+  if(!btn)return;
+
+  let saved='light';
+
+  try{
+    saved=localStorage.getItem('vietTalesTheme')||'light';
+  }catch(e){}
+
+  function applyTheme(theme){
+    document.body.dataset.theme=theme;
+
+    btn.textContent=theme==='dark'
+      ?'☀️ Chế độ sáng'
+      :'🌙 Chế độ tối';
+
+    try{
+      localStorage.setItem('vietTalesTheme',theme);
+    }catch(e){}
+  }
+
+  applyTheme(saved);
+
+  btn.addEventListener('click',()=>{
+    const next=
+      document.body.dataset.theme==='dark'
+        ?'light'
+        :'dark';
+
+    applyTheme(next);
+  });
+}
+
 async function init(){
+  initTheme();
   await load();
+
   const searchInput=$('search-input');
   const searchCategory=$('search-category');
   const searchSort=$('search-sort');
@@ -661,8 +759,6 @@ let ed=e.target.closest('[data-edit]');if(ed){edit(ed.dataset.edit);return}let p
   
 $('avatar-upload').onchange=async e=>{
     const file=e.target.files[0];
-
-  alert('Đã nhận sự kiện chọn ảnh!');
 
   if(!file)return;
 
