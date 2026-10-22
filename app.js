@@ -1,7 +1,8 @@
 (() => {
 const $=id=>document.getElementById(id);
-let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,audioPath=null,favorites=[];
-  let audioFile=null;
+let db=null,user=null,admin=false,mode='login',stories=[],imagePath=null,audioPath=null,videoPath=null,favorites=[];
+let audioFile=null;
+let videoFile=null;
   if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
   db = window.supabase.createClient(
     window.SUPABASE_URL,
@@ -387,9 +388,12 @@ async function adminList(){
 function reset(){
   $('story-form').reset();
   $('story-id').value='';
+   $('story-video').value='';
   imagePath=null;
   audioPath=null;
   audioFile=null;
+     videoPath=null;
+  videoFile=null;
   storyHtml='';
   storyTextSnapshot='';
   $('editor-title').textContent='Thêm truyện mới';
@@ -430,6 +434,7 @@ function edit(id){
   $('published').checked=s.is_published;
   imagePath=s.image_path;
   audioPath=s.audio_path||null;
+    videoPath=s.video_path||null;
   $('editor-title').textContent='Chỉnh sửa truyện';
 
   tab('editor');
@@ -520,6 +525,36 @@ async function save(e){
       let old=stories.find(s=>String(s.id)===String(id));
       p.audio_path=old?.audio_path||null;
     }
+
+    let video=$('story-video').files[0]||videoFile;
+
+    if(video){
+      if(!video.name.toLowerCase().endsWith('.mp4')){
+        throw Error('Vui lòng chọn video MP4.');
+      }
+
+      if(video.size>50*1024*1024){
+        throw Error('Video cần nhỏ hơn 50 MB.');
+      }
+
+      let path=`${user.id}/${crypto.randomUUID()}.mp4`;
+
+      let up=await db.storage
+        .from('story-videos')
+        .upload(path,video,{
+          contentType:'video/mp4'
+        });
+
+      if(up.error)throw up.error;
+
+      p.video_path=path;
+    }else if(id){
+      let old=stories.find(s=>String(s.id)===String(id));
+      p.video_path=old?.video_path||null;
+    }else{
+      p.video_path=null;
+    }
+
     let r=id
       ?await db.from('stories').update(p).eq('id',id)
       :await db.from('stories').insert(p);
@@ -748,6 +783,26 @@ if(!box.childNodes.length){
   box.textContent=s.content||'';
 }
 
+if(s.video_path && db){
+  const video=document.createElement('video');
+
+  video.controls=true;
+  video.preload='metadata';
+  video.playsInline=true;
+  video.style.width='100%';
+  video.style.maxWidth='100%';
+  video.style.maxHeight='480px';
+  video.style.display='block';
+  video.style.margin='24px auto';
+  video.style.borderRadius='12px';
+
+  video.src=db.storage
+    .from('story-videos')
+    .getPublicUrl(s.video_path).data.publicUrl;
+
+  box.appendChild(video);
+}
+
 modal('reader-modal',true);
 }
 return;
@@ -756,7 +811,9 @@ let ed=e.target.closest('[data-edit]');if(ed){edit(ed.dataset.edit);return}let p
   $('story-audio').onchange=e=>{
   audioFile=e.target.files[0]||null;
 };
-  
+    $('story-video').onchange=e=>{
+    videoFile=e.target.files[0]||null;
+  };
 $('avatar-upload').onchange=async e=>{
     const file=e.target.files[0];
 
