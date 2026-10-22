@@ -526,8 +526,7 @@ async function save(e){
       p.audio_path=old?.audio_path||null;
     }
 
-    let video=$('story-video').files[0]||videoFile;
-
+   let video=$('story-video')?.files[0]||videoFile;
     if(video){
       if(!video.name.toLowerCase().endsWith('.mp4')){
         throw Error('Vui lòng chọn video MP4.');
