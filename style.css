@@ -320,3 +320,29 @@ header .brand > div {
   }
 }
 
+/* ===== VIDEO TRONG TRANG ĐỌC TRUYỆN ===== */
+.reader-text video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #292b26;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 24px auto;
+}
+
+.reader-text video:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .reader-text video {
+    border-radius: 8px;
+    margin: 16px auto;
+  }
+}
+
