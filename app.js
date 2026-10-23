@@ -484,11 +484,19 @@ async function save(e){
       let ext=file.name.split('.').pop().toLowerCase();
       let path=`${user.id}/${crypto.randomUUID()}.${ext}`;
 
-      let up=await db.storage
-        .from('story-images')
-        .upload(path,file,{contentType:file.type});
+    let up=await db.storage
+  .from('story-videos')
+  .upload(path,video,{
+    contentType:'video/mp4'
+  });
 
-      if(up.error)throw up.error;
+if(up.error){
+  console.error('Lỗi tải video:',up.error);
+  throw Error(
+    'Lỗi tải video: ' +
+    (up.error.message || JSON.stringify(up.error))
+  );
+}
 
       p.image_path=path;
       p.image_url=db.storage
