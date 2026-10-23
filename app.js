@@ -544,17 +544,28 @@ if(up.error){
         throw Error('Video cần nhỏ hơn 50 MB.');
       }
 
-      let path=`${user.id}/${crypto.randomUUID()}.mp4`;
+     
+let path=`${user.id}/${crypto.randomUUID()}.mp4`;
 
-      let up=await db.storage
-        .from('story-videos')
-        .upload(path,video,{
-          contentType:'video/mp4'
-        });
+$('story-message').textContent='Đang tải video lên...';
+console.log('BẮT ĐẦU TẢI VIDEO:',video.name,video.size);
 
-      if(up.error)throw up.error;
+let up=await db.storage
+  .from('story-videos')
+  .upload(path,video,{
+    contentType:'video/mp4'
+  });
 
-      p.video_path=path;
+if(up.error){
+  console.error('LỖI UPLOAD VIDEO:',up.error);
+  throw up.error;
+}
+
+console.log('TẢI VIDEO THÀNH CÔNG:',path);
+p.video_path=path;
+
+$('story-message').textContent='Video đã tải lên, đang lưu truyện...';
+
     }else if(id){
       let old=stories.find(s=>String(s.id)===String(id));
       p.video_path=old?.video_path||null;
