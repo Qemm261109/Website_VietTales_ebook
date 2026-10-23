@@ -534,44 +534,46 @@ async function save(e){
       p.audio_path=old?.audio_path||null;
     }
 
+   
     // 3. Video
-    let video=$('story-video')?.files[0]||videoFile;
+    const selectedVideo = $('story-video')?.files?.[0] || videoFile;
 
-    if(video){
-      if(!video.name.toLowerCase().endsWith('.mp4')){
+    if (selectedVideo) {
+      if (!selectedVideo.name.toLowerCase().endsWith('.mp4')) {
         throw Error('Vui lòng chọn video MP4.');
       }
 
-      if(video.size>50*1024*1024){
+      if (selectedVideo.size > 50 * 1024 * 1024) {
         throw Error('Video cần nhỏ hơn 50 MB.');
       }
 
-      let path=`${user.id}/${crypto.randomUUID()}.mp4`;
+      const videoPath = `${user.id}/${crypto.randomUUID()}.mp4`;
 
-      $('story-message').textContent='Đang tải video lên...';
+      $('story-message').textContent = 'Đang tải video lên...';
 
-      console.log('BẮT ĐẦU TẢI VIDEO:',video.name,video.size);
+      console.log('BẮT ĐẦU TẢI VIDEO:', selectedVideo.name, selectedVideo.size);
 
-      let up=await db.storage
+      const videoUpload = await db.storage
         .from('story-videos')
-        .upload(path,video,{
-          contentType:'video/mp4'
+        .upload(videoPath, selectedVideo, {
+          contentType: 'video/mp4',
+          upsert: false
         });
 
-      if(up.error){
-        console.error('LỖI UPLOAD VIDEO:',up.error);
-        throw up.error;
+      if (videoUpload.error) {
+        console.error('LỖI UPLOAD VIDEO:', videoUpload.error);
+        throw videoUpload.error;
       }
 
-      console.log('TẢI VIDEO THÀNH CÔNG:',path);
-      p.video_path=path;
+      console.log('TẢI VIDEO THÀNH CÔNG:', videoPath);
+      p.video_path = videoPath;
 
-      $('story-message').textContent='Video đã tải lên, đang lưu truyện...';
-    }else if(id){
-      let old=stories.find(s=>String(s.id)===String(id));
-      p.video_path=old?.video_path||null;
-    }else{
-      p.video_path=null;
+      $('story-message').textContent = 'Video đã tải lên, đang lưu truyện...';
+    } else if (id) {
+      const old = stories.find(s => String(s.id) === String(id));
+      p.video_path = old?.video_path || null;
+    } else {
+      p.video_path = null;
     }
 
     // 4. Lưu truyện
