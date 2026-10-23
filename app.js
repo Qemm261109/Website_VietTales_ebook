@@ -484,11 +484,32 @@ async function save(e){
       let ext=file.name.split('.').pop().toLowerCase();
       let path=`${user.id}/${crypto.randomUUID()}.${ext}`;
 
-    let up=await db.storage
-  .from('story-videos')
-  .upload(path,video,{
-    contentType:'video/mp4'
-  });
+   
+let up;
+
+try{
+  up=await Promise.race([
+    db.storage
+      .from('story-videos')
+      .upload(path,video,{
+        contentType:'video/mp4'
+      }),
+    new Promise((_,reject)=>{
+      setTimeout(
+        ()=>reject(new Error(
+          'Tải video quá lâu. Hãy kiểm tra kết nối mạng và cấu hình Supabase Storage.'
+        )),
+        30000
+      );
+    })
+  ]);
+}catch(err){
+  console.error('LỖI UPLOAD VIDEO:',err);
+  throw err;
+}
+
+if(up.error)throw up.error;
+
 
 if(up.error){
   console.error('Lỗi tải video:',up.error);
