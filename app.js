@@ -440,6 +440,7 @@ function edit(id){
   tab('editor');
 }
 
+
 async function save(e){
   e.preventDefault();
 
@@ -448,8 +449,8 @@ async function save(e){
   let id=$('story-id').value;
   let text=$('story-text').value.trim();
 
-  if(!storyHtml&& !text){
-    $('story-message').textContent='Vui lòng nhập tên truyện và nội dung.';
+  if(!storyHtml&&!text){
+    $('story-message').textContent='Vui lòng nhập nội dung truyện.';
     return;
   }
 
@@ -474,6 +475,7 @@ async function save(e){
   }
 
   try{
+    // 1. Ảnh bìa
     let file=$('story-image').files[0];
 
     if(file){
@@ -484,50 +486,25 @@ async function save(e){
       let ext=file.name.split('.').pop().toLowerCase();
       let path=`${user.id}/${crypto.randomUUID()}.${ext}`;
 
-   
-let up;
+      let up=await db.storage
+        .from('story-images')
+        .upload(path,file,{
+          contentType:file.type
+        });
 
-try{
-  up=await Promise.race([
-    db.storage
-      .from('story-videos')
-      .upload(path,video,{
-        contentType:'video/mp4'
-      }),
-    new Promise((_,reject)=>{
-      setTimeout(
-        ()=>reject(new Error(
-          'Tải video quá lâu. Hãy kiểm tra kết nối mạng và cấu hình Supabase Storage.'
-        )),
-        30000
-      );
-    })
-  ]);
-}catch(err){
-  console.error('LỖI UPLOAD VIDEO:',err);
-  throw err;
-}
-
-if(up.error)throw up.error;
-
-
-if(up.error){
-  console.error('Lỗi tải video:',up.error);
-  throw Error(
-    'Lỗi tải video: ' +
-    (up.error.message || JSON.stringify(up.error))
-  );
-}
+      if(up.error)throw up.error;
 
       p.image_path=path;
       p.image_url=db.storage
         .from('story-images')
         .getPublicUrl(path).data.publicUrl;
     }else if(id){
-      let old=stories.find(s=>s.id===id);
+      let old=stories.find(s=>String(s.id)===String(id));
       p.image_path=old?.image_path||null;
       p.image_url=old?.image_url||null;
     }
+
+    // 2. Âm thanh
     let audio=audioFile;
 
     if(audio){
@@ -540,6 +517,8 @@ if(up.error){
       }
 
       let path=`${user.id}/${crypto.randomUUID()}.mp3`;
+
+      $('story-message').textContent='Đang tải âm thanh lên...';
 
       let up=await db.storage
         .from('story-audio')
@@ -555,7 +534,9 @@ if(up.error){
       p.audio_path=old?.audio_path||null;
     }
 
-   let video=$('story-video')?.files[0]||videoFile;
+    // 3. Video
+    let video=$('story-video')?.files[0]||videoFile;
+
     if(video){
       if(!video.name.toLowerCase().endsWith('.mp4')){
         throw Error('Vui lòng chọn video MP4.');
@@ -565,28 +546,27 @@ if(up.error){
         throw Error('Video cần nhỏ hơn 50 MB.');
       }
 
-     
-let path=`${user.id}/${crypto.randomUUID()}.mp4`;
+      let path=`${user.id}/${crypto.randomUUID()}.mp4`;
 
-$('story-message').textContent='Đang tải video lên...';
-console.log('BẮT ĐẦU TẢI VIDEO:',video.name,video.size);
+      $('story-message').textContent='Đang tải video lên...';
 
-let up=await db.storage
-  .from('story-videos')
-  .upload(path,video,{
-    contentType:'video/mp4'
-  });
+      console.log('BẮT ĐẦU TẢI VIDEO:',video.name,video.size);
 
-if(up.error){
-  console.error('LỖI UPLOAD VIDEO:',up.error);
-  throw up.error;
-}
+      let up=await db.storage
+        .from('story-videos')
+        .upload(path,video,{
+          contentType:'video/mp4'
+        });
 
-console.log('TẢI VIDEO THÀNH CÔNG:',path);
-p.video_path=path;
+      if(up.error){
+        console.error('LỖI UPLOAD VIDEO:',up.error);
+        throw up.error;
+      }
 
-$('story-message').textContent='Video đã tải lên, đang lưu truyện...';
+      console.log('TẢI VIDEO THÀNH CÔNG:',path);
+      p.video_path=path;
 
+      $('story-message').textContent='Video đã tải lên, đang lưu truyện...';
     }else if(id){
       let old=stories.find(s=>String(s.id)===String(id));
       p.video_path=old?.video_path||null;
@@ -594,6 +574,7 @@ $('story-message').textContent='Video đã tải lên, đang lưu truyện...';
       p.video_path=null;
     }
 
+    // 4. Lưu truyện
     let r=id
       ?await db.from('stories').update(p).eq('id',id)
       :await db.from('stories').insert(p);
@@ -604,11 +585,14 @@ $('story-message').textContent='Video đã tải lên, đang lưu truyện...';
     reset();
     tab('list');
     await adminList();
+
   }catch(err){
+    console.error('LỖI LƯU TRUYỆN:',err);
     $('story-message').textContent=
       err.message||'Không lưu được truyện.';
   }
 }
+
 
 
 function initTheme(){
